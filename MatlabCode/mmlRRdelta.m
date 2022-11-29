@@ -1,4 +1,4 @@
-function [B1vetnew, B2vetnew] = mmlGBMdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice)
+function [B1vetnew, B2vetnew] = mmlRRdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice)
 
 % ---- calculate the marginal log-likelihood
 ak_p1 = ak + n1/2; 

@@ -1,7 +1,7 @@
 
 function [UniSt, ProbSt, GammaSt, loglik, prior_prob, prigam, mu_1_matSt, mu_2_matSt, storeADgam, ...
     storeSgam, acceptgam, acceptmu1, acceptmu2, Avet, B1vet, B2vet, C, D1vet, D2vet, NaccB]= ...
-metroGBM(X, Y1, Y2, gam_prior, loglik, prior_prob, prigam, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ak, ...
+metroRR(X, Y1, Y2, gam_prior, loglik, prior_prob, prigam, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ak, ...
 bk, Q, d_k, aj, bj, n1, n2, p, N, acceptgam, acceptmu1, acceptmu2, nPar, Avet, B1vet, B2vet, C, D1vet, D2vet, NaccB, h1)
 
 %%% we don't actually use these, I think. It stores the choices between
@@ -30,10 +30,10 @@ for i=1:nPar
         else
         end
         gamnew(choice)=1;        
-        [Cnew, prigamnew] = mmlGBMgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
+        [Cnew, prigamnew] = mmlRRgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
         Adiff = -Avet(choice); 
         Ddiff = -D1vet(choice)-D2vet(choice);
-        [B1vetnew, B2vetnew] = mmlGBMdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice);
+        [B1vetnew, B2vetnew] = mmlRRdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice);
         B1vet(choice) = B1vetnew; 
         B2vet(choice) = B2vetnew;
         Bdiff = B1vetnew+B2vetnew;
@@ -45,7 +45,7 @@ for i=1:nPar
         else
         end
         gamnew(choice)=0;
-        [Cnew, prigamnew] = mmlGBMgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
+        [Cnew, prigamnew] = mmlRRgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
 
         Adiff = Avet(choice);  
         Bdiff = -B1vet(choice)-B2vet(choice);
@@ -61,12 +61,12 @@ for i=1:nPar
             else
             end
             gamnew(choice) = abs(gam_prior(choice)-1);            
-            [Cnew, prigamnew] = mmlGBMgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
+            [Cnew, prigamnew] = mmlRRgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
             % Adding
             if (gamnew(choice)-1)==0
                 Adiff = -Avet(choice); 
                 Ddiff = -D1vet(choice)-D2vet(choice);
-                [B1vetnew, B2vetnew] = mmlGBMdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice);
+                [B1vetnew, B2vetnew] = mmlRRdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, choice);
                 B1vet(choice) = B1vetnew; 
                 B2vet(choice) = B2vetnew;
                 Bdiff = B1vetnew+B2vetnew;
@@ -95,8 +95,8 @@ for i=1:nPar
             elem2=posones(choice2);     
             gamnew(elem1)=1;            
             gamnew(elem2)=0;            
-            [Cnew, prigamnew] = mmlGBMgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
-            [B1vetnew, B2vetnew] = mmlGBMdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, elem1);
+            [Cnew, prigamnew] = mmlRRgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1);
+            [B1vetnew, B2vetnew] = mmlRRdelta(X, Y1, Y2, n1, n2, mu_j1, mu_j2, ak, bk, elem1);
             B1vet(elem1) = B1vetnew; 
             B2vet(elem1) = B2vetnew;
             Adiff = Avet(elem2)-Avet(elem1); 
@@ -179,7 +179,7 @@ for i=1:nPar
         mu_j1new(l) = mu1_new;
         B1vetnew = B1vet; 
         D1vetnew = D1vet;
-        [Cnew, B1vetnew, D1vetnew] = mmlGBMbeta(gam_prior, X, Y1, Y2, n1, n2,p, Q, mu_j1new, mu_j2, ...
+        [Cnew, B1vetnew, D1vetnew] = mmlRRbeta(gam_prior, X, Y1, Y2, n1, n2,p, Q, mu_j1new, mu_j2, ...
          ak, bk, aj, bj, d_k, l, B1vetnew, D1vetnew, k, h1); 
         logliknew = Cnew + sum(Avet(logical(gam_prior==0))) + sum(B1vetnew(logical(gam_prior))) + sum(B2vet(logical(gam_prior))) +...
         sum(D1vetnew(logical(gam_prior==0))) + sum(D2vet(logical(gam_prior==0)));        
@@ -200,7 +200,7 @@ for i=1:nPar
         mu_j2new(l) = mu2_new;
         B2vetnew = B2vet; 
         D2vetnew = D2vet;
-        [Cnew, B2vetnew, D2vetnew] = mmlGBMbeta(gam_prior, X, Y1, Y2, n1, n2, p, Q, mu_j1, mu_j2new...
+        [Cnew, B2vetnew, D2vetnew] = mmlRRbeta(gam_prior, X, Y1, Y2, n1, n2, p, Q, mu_j1, mu_j2new...
         , ak, bk, aj, bj, d_k, l, B2vetnew, D2vetnew, k, h1);               
         logliknew = Cnew + sum(Avet(logical(gam_prior==0))) + sum(B1vet(logical(gam_prior))) + sum(B2vetnew(logical(gam_prior))) +...
         sum(D1vet(logical(gam_prior==0))) + sum(D2vetnew(logical(gam_prior==0)));        

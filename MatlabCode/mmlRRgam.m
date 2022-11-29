@@ -1,4 +1,4 @@
-function [Cnew, ss] = mmlGBMgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1)
+function [Cnew, ss] = mmlRRgam(gamnew, Q, mu_j1, mu_j2, d_k, alpha_0, alpha_1, N, h1)
 
 varSel = sum(gamnew); 
 QS = Q(logical(gamnew), logical(gamnew)); 

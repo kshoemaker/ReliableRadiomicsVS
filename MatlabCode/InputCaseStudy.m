@@ -75,7 +75,7 @@ h1 = 1; % scale parameter
 % Run the mainprog - Chain #1
 [mu_1_mat, mu_2_mat, log_prob, ADgam, Sgam, ...
    acceptgam, acceptmu1, acceptmu2, GammaA]= ... 
-mainprogGBM(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ...
+mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ...
     a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 % set the burn-in 
@@ -98,7 +98,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 % Run the mainprog - Chain #2
 [mu_1_mat, mu_2_mat, log_prob, ADgam, Sgam, ...
    acceptgam, acceptmu1, acceptmu2, GammaA]= ... 
-mainprogGBM(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
+mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
 GammaBI2 = GammaA((bi+1):end);
@@ -113,7 +113,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 % Run the mainprog - Chain #3
 [mu_1_mat, mu_2_mat, log_prob, ADgam, Sgam, ...
    acceptgam, acceptmu1, acceptmu2, GammaA]= ... 
-mainprogGBM(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
+mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
 GammaBI3 = GammaA((bi+1):end);
