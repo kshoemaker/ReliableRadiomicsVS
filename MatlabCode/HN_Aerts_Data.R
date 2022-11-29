@@ -1,5 +1,4 @@
-### Simulation Design ###
-## Week of Jan 18, 2019
+### Case Study Data Processing ###
   
 # setup 
 rm(list = ls())
@@ -13,7 +12,7 @@ library(gtools)
 set.seed(1234)
 #setwd("~/Google Drive/Classes/CP_Project/LungProjectData")
 #setwd("C:/Users/KAShoemaker/Box Sync/Stats + radiomics project")
-setwd("~/Documents/GitHub/StatinMedicineProject/CaseStudyData/")
+setwd("~/Documents/GitHub/ReliableRadiomicsVS/CaseStudyData/")
 # 78 subjects
 hn_data <- read.csv("CTPatientDataForKate.csv", stringsAsFactors = T)
 # hn_data <- hn_data[c(-81,-82),]
@@ -67,54 +66,7 @@ for (i in 1:(ncol(hn_radiomics))){
   }
   hist(trans_hn_radiomics[,i])
 }
-# hn_radiomics[,149] <- log(hn_radiomics[,149])
-# hn_radiomics[,136] <- log(hn_radiomics[,136])
-# hn_radiomics[,132] <- log(hn_radiomics[,132])
-# hn_radiomics[,131] <- log(hn_radiomics[,131])
-# hn_radiomics[,129] <- log(hn_radiomics[,129])
-# hn_radiomics[,128] <- log(hn_radiomics[,128])
-# hn_radiomics[,127] <- log(hn_radiomics[,127])
-# hn_radiomics[,124] <- log(hn_radiomics[,124])
-# hn_radiomics[,123] <- log(hn_radiomics[,123])
-# hn_radiomics[,121] <- log(hn_radiomics[,121])
-# hn_radiomics[,114] <- log(hn_radiomics[,114])
-# hn_radiomics[,113] <- log(hn_radiomics[,113])
-# hn_radiomics[,112] <- log(hn_radiomics[,112])
-# hn_radiomics[,109] <- log(hn_radiomics[,109])
-# hn_radiomics[,92] <- log(hn_radiomics[,92])
-# hn_radiomics[,91] <- log(hn_radiomics[,91])
-# hn_radiomics[,89] <- log(hn_radiomics[,89])
-# hn_radiomics[,88] <- log(hn_radiomics[,88])
-# hn_radiomics[,87] <- log(hn_radiomics[,87])
-# hn_radiomics[,86] <- log(hn_radiomics[,86] - min(hn_radiomics[,86]) + 0.1)
-# hn_radiomics[,84] <- log(hn_radiomics[,84])
-# hn_radiomics[,83] <- log(hn_radiomics[,83])
-# hn_radiomics[,81] <- log(hn_radiomics[,81])
-# hn_radiomics[,69] <- log(hn_radiomics[,69])
-# hn_radiomics[,56] <- log(hn_radiomics[,56])
-# hn_radiomics[,55] <- log(hn_radiomics[,55])
-# hn_radiomics[,52] <- log(hn_radiomics[,52])
-# hn_radiomics[,51] <- log(hn_radiomics[,51])
-# hn_radiomics[,49] <- log(hn_radiomics[,49])
-# hn_radiomics[,48] <- log(hn_radiomics[,48]+0.1)
-# hn_radiomics[,47] <- log(hn_radiomics[,47])
-# hn_radiomics[,41] <- log(hn_radiomics[,41])
-# hn_radiomics[,43] <- log(hn_radiomics[,43]+0.1)
-# hn_radiomics[,44] <- log(hn_radiomics[,44]+0.01)
-# hn_radiomics[,29] <- log(hn_radiomics[,29])
-# hn_radiomics[,15] <- log(hn_radiomics[,15])
-# hn_radiomics[,12] <- log(hn_radiomics[,12])
-# hn_radiomics[,11] <- log(hn_radiomics[,11])
-# hn_radiomics[,9] <- log(hn_radiomics[,9])
-# hn_radiomics[,8] <- log(hn_radiomics[,8] + 0.1)
-# hn_radiomics[,7] <- log(hn_radiomics[,7])
-# hn_radiomics[,6] <- log(hn_radiomics[,6]-min(hn_radiomics[,6])+0.1)
-# hn_radiomics[,4] <- log(hn_radiomics[,4]+0.1)
-# hn_radiomics[,3] <- log(hn_radiomics[,3]+0.1)
-# hn_radiomics[,1] <- log(hn_radiomics[,1])
-# hn_radiomics[,142] <- exp(hn_radiomics[,142])
-# hn_radiomics[,140] <- exp(hn_radiomics[,140])
-# hn_radiomics[,102] <- exp(hn_radiomics[,102])
+
 var_aerts <- apply(hn_radiomics,2,var)
 
 hn_radiomics <- trans_hn_radiomics
@@ -171,91 +123,3 @@ Zf <- as.matrix(gene_data[-train,])
 N <- t(N)
 
 
-# library(R.matlab)
-# #setwd("C:/Users/KAShoemaker/Google Drive/Classes/CP_Project/ProbitModelCode/")
-# setwd("~/Documents/GitHub/StatinMedicineProject/MatLabCode/")
-# writeMat("HNModelData_Dec20HPV.mat", X = X, Xf = Xf, Z = Z, Zf = Zf, Y=Y, Yf=Yf, N = N)
-# 
-# ### logistic fitting?
-# library(tidyverse)
-# library(caret)
-# library(glmnet)
-# data <- data.frame(X,Y=as.factor(Y))
-# log_fit <- glmnet(X,as.factor(Y), family = "binomial", lambda = 0.08)
-# summary(log_fit)
-# Yf_predict <- predict(log_fit,Xf, type = "class")
-# length(which(Yf_predict == Yf))
-# 
-# cvlogfit <- cv.glmnet(X,Y, family = "binomial", type.measure = "class")
-# cvYPredict <- predict(cvlogfit, Xf, s = "lambda.min", type = "class")
-# length(which(cvYPredict == Yf))/length(Yf)
-# 
-# y <- Y
-# x <- X[,161]
-# df <- data.frame(x,y)
-# just_volume <- glm(y ~ x, family = "binomial", data = df)
-# yfvol <- predict(just_volume, newdata = data.frame(x = Xf[,161]), type = "response")
-# length((which(Yf == (yfvol > 0.5))))
-# 
-# # 
-# library(survminer)
-# library(survival)
-# ggsurvplot(survfit(Surv(hn_data$OStime,hn_data$OS)~1),data = hn_data)
-# ggsurvplot(survfit(Surv(hn_aerts$OStime,hn_aerts$OS)~1),data = hn_aerts,  title = "Survival Curve",legend = "none",theme = theme_classic(), palette = "skyblue")
-# plot(density(hn_aerts$OStime))
-# 
-# 
-# 
-# 
-# big_set <- c(7,
-#              12,
-#              41,
-#              44,
-#              47,
-#              52,
-#              81,
-#              87,
-#              121,
-#              124,
-#              127)
-# little_set <- c(52,121,127)
-# train_data <- X[,big_set]
-# train_data <- as.data.frame(scale(train_data))
-# 
-# train_data$Y <- as.factor(Y)
-# 
-# test_data <- Xf[,big_set]
-# test_data <- as.data.frame(scale(test_data))
-# test_data$Y <- as.factor(Yf)
-# 
-# 
-# ### 
-# trial_glm <- glm(Y ~ . , data = train_data,family = binomial(link = "logit"))
-# new <- predict(trial_glm,newdata  = test_data, type  = "response")
-# plotROC(Yf,new)
-# #plot(trial_glm)
-# 
-# # my_predict <- predict(trial_glm,test_data, type = "response")
-# # plotROC(Yf,my_predict)
-# # #opt_cutoff <- optimalCutoff(Yf, my_predict)
-# # misClassError(Yf, my_predict,threshold = 0.5)
-# 
-# library(randomForest)
-# rf_predict <- randomForest(train_data[,-12],y = train_data$Y)
-# rf_out <- predict(rf_predict,test_data[,-12])
-# (sum(Yf == rf_out)/length(Yf))
-# 
-# train_data <- X[,little_set]
-# train_data <- as.data.frame(scale(train_data))
-# train_data$Y <- as.factor(Y)
-# test_data <- Xf[,little_set]
-# test_data <- as.data.frame(scale(test_data))
-# test_data$Y <- as.factor(Yf)
-# 
-# rf_predict_small <- randomForest(train_data[,-4],y = train_data$Y)
-# rf_out_small <- predict(rf_predict_small,test_data[,-4])
-# (sum(Yf == rf_out_small)/length(Yf))
-# 
-# trial_glm <- glm(Y ~ . , data = train_data,family = binomial(link = "logit"))
-# new <- predict(trial_glm,newdata  = test_data, type  = "response")
-# plotROC(Yf,new)
