@@ -5,7 +5,7 @@ using reliability metrics"*
 
 ### Data
 
-* Case study data, if made available, will be [here](/CaseStudyData).
+* Case study data is available [here](/CaseStudyData).
   * Data processing is also done in [HN_Aerts_Data.R](MatlabCode/HN_Aerts_Data.R)
 * Reliability information is available [here](/CaseStudyData/LungProjectData). 
 * Simulation data is created by the files beginning with `sim` in [MatLabCode](MatlabCode/)
