@@ -185,11 +185,11 @@ find(MargGam>feature_thresh)
 %         disp(' ')
 %         disp('------- Posterior means (group 1) ...')
 %         disp(' ')
-%         mean(Beta01_gam)
+%         mean(mu01_gam)
 %         disp(' ')
 %         disp('------- Posterior means (group 2) ...')
 %         disp(' ')
-%         mean(Beta02_gam)
+%         mean(mu01_gam)
     end
 
     selected = size(ROI_sel);
@@ -257,12 +257,12 @@ find(MargGam>feature_thresh)
          mu02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
         
         % mean of iterations of only when the selected variables are selected
-        % mu01f =  mean(mu01_gam); % Beta01_PostMean;
-        % mu02f =  mean(mu02_gam);
+         mu01f =  mean(mu01_gam); % Beta01_PostMean;
+         mu02f =  mean(mu02_gam);
         
         % using the mean of all values 
-         mu01f =  mu01_PostMean;
-         mu02f =  mu02_PostMean;
+        % mu01f =  mu01_PostMean;
+        % mu02f =  mu02_PostMean;
          
         [nf,  ~] = size(Xf);
         ClassP = [];
@@ -365,17 +365,18 @@ fpr_class_lasso = sum(predYf == 1 & Yf == 0) / sum(Yf' == 0) ;
 
 % do the SVM
 % 
-train_data = [X Y];
-test_data = [Xf Yf];
+train_X = [X; Xf]; 
+train_Y =  [Y; Yf];
+%test_data = [Xf Yf];
 
-svm_model = fitcsvm(X,Y);
+svm_model = fitcsvm(train_X,train_Y);
 CVSVMModel = crossval(svm_model);
 classLoss = kfoldLoss(CVSVMModel);
 misclas_svm = classLoss;
+% 
 
-
-% svm_predict = predict(CVSVMModel, Xf); 
-% misclas_svm = length(Yf) - sum(svm_predict == Yf);
+ % svm_predict = kfoldPredict(CVSVMModel, Xf); 
+ % misclas_svm = length(Yf) - sum(svm_predict == Yf);
 
 %% Gelman Rubin?
 

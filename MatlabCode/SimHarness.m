@@ -1,7 +1,7 @@
 function [ ] = ...
  SimHarness(iteration, n, balance, p1, p2, mu1, informed)
 
-seeds = (1:100)+10289;
+seeds = (1:100)+102389;
 
 this_seed = seeds(iteration);
 rng(this_seed) 
@@ -58,9 +58,9 @@ ModelRun(X, Xf, Y, Yf, N, n_iter, ...
      bi, a, b, ak, bk, ...
      alpha_0, alpha_1, c, feature_thresh)
 
-if informed = 1
+if informed == 1
    type = "informative";
-elseif informed = 0
+elseif informed == 0
     type = "noninformative";
 end 
 file_name = join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, ".mat"], "");

@@ -1,6 +1,6 @@
-function [numVar, numError, MargGam, tpr_class, fpr_class, misclas,  ...
+function [numVar, numError, MargGam, mu01f, mu02f, tpr_class, fpr_class, misclas,  ...
           lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
-ModelRun(X, Xf, Y, Yf, n_iter, ...
+ModelRun(X, Xf, Y, Yf, N, n_iter, ...
          bi, a, b, ak, bk, ...
          alpha_0, alpha_1, c, feature_thresh)
 
@@ -8,6 +8,7 @@ ModelRun(X, Xf, Y, Yf, n_iter, ...
 % Xf - test data 
 % Y - test group membership
 % Yf - train group membership
+% N - reliablity parameter
 % n_iter - number of iterations
 % bi - size of burn in
 % a, b - hyperparameters on sigma0j
@@ -73,7 +74,7 @@ mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ..
 % bi = 20000;
 
 % save the non-burnin sections
-GammaBI1 = GammaA((bi+1):end);
+GammaBI1 = GammaA((bi+2):end);
 log_prob1 = log_prob((bi+1):end);
 mu_1_mat1 = mu_1_mat(:, (bi+1):end);
 mu_2_mat1 = mu_2_mat(:, (bi+1):end);
@@ -92,7 +93,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
-GammaBI2 = GammaA((bi+1):end);
+GammaBI2 = GammaA((bi+2):end);
 log_prob2 = log_prob((bi+1):end);
 mu_1_mat2 = mu_1_mat(:, (bi+1):end);
 mu_2_mat2 = mu_2_mat(:, (bi+1):end);
@@ -107,7 +108,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
-GammaBI3 = GammaA((bi+1):end);
+GammaBI3 = GammaA((bi+2):end);
 log_prob3 = log_prob((bi+1):end);
 mu_1_mat3 = mu_1_mat(:, (bi+1):end);
 mu_2_mat3 = mu_2_mat(:, (bi+1):end);
@@ -119,7 +120,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 %% Pool together 3 MCMC Chains
 
 GammaA = [GammaBI1 ; GammaBI2; GammaBI3];
-log_prob = [log_prob1,  log_prob2,  log_prob3];
+%log_prob = [log_prob1,  log_prob2,  log_prob3];
 mu_1_mat = [mu_1_mat1 mu_1_mat2 mu_1_mat3];
 mu_2_mat = [mu_2_mat1 mu_2_mat2 mu_2_mat3];
 
@@ -158,12 +159,12 @@ find(MargGam>feature_thresh)
 
 
     ROI_sel = find(MargGam>feature_thresh);
-    Beta01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
-    Beta02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
+    mu01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
+    mu02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
 
     test = isempty(ROI_sel);
     if test == 0
-        Beta01_gam = []; Beta02_gam = [];
+        mu01_gam = []; mu02_gam = [];
         GammaBI=GammaA; 
         aa = size(GammaBI);
         div = 1; 
@@ -171,24 +172,24 @@ find(MargGam>feature_thresh)
         aaa = 1; 
         freTot = zeros(p, 1);
         bbb=size(GammaBI);
-        Beta01_gamBI = mu_1_mat(ROI_sel, :);
-        Beta02_gamBI = mu_2_mat(ROI_sel, :);
+        mu01_gamBI = mu_1_mat(ROI_sel, :);
+        mu02_gamBI = mu_2_mat(ROI_sel, :);
         for i=aaa:bbb
             if length(str2num(GammaBI{i}))==length(ROI_sel)
                 if str2num(GammaBI{i})==ROI_sel'
-                    Beta01_gam = [Beta01_gam; Beta01_gamBI(:, i)'];
-                    Beta02_gam = [Beta02_gam; Beta02_gamBI(:, i)'];
+                    mu01_gam = [mu01_gam; mu01_gamBI(:, i)'];
+                    mu02_gam = [mu02_gam; mu02_gamBI(:, i)'];
                 end
             end    
         end
-        disp(' ')
-        disp('------- Posterior means (group 1) ...')
-        disp(' ')
-        mean(Beta01_gam)
-        disp(' ')
-        disp('------- Posterior means (group 2) ...')
-        disp(' ')
-        mean(Beta02_gam)
+%         disp(' ')
+%         disp('------- Posterior means (group 1) ...')
+%         disp(' ')
+%         mean(mu01_gam)
+%         disp(' ')
+%         disp('------- Posterior means (group 2) ...')
+%         disp(' ')
+%         mean(mu01_gam)
     end
 
     selected = size(ROI_sel);
@@ -250,16 +251,19 @@ find(MargGam>feature_thresh)
         X1gam = Xgam(Y1, :);
         X2gam = Xgam(Y2, :); 
         ROI_sel = gammaList;
-        Beta01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
-        Beta02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
         
-        % only when the selected variables are selected
-        % beta01f =  mean(Beta01_gam); % Beta01_PostMean;
-        % beta02f =  mean(Beta02_gam);
+        % mean of all iterations
+         mu01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
+         mu02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
+        
+        % mean of iterations of only when the selected variables are selected
+         mu01f =  mean(mu01_gam); % Beta01_PostMean;
+         mu02f =  mean(mu02_gam);
         
         % using the mean of all values 
-        beta01f =  Beta01_PostMean;
-        beta02f =  Beta02_PostMean;
+        % mu01f =  mu01_PostMean;
+        % mu02f =  mu02_PostMean;
+         
         [nf,  ~] = size(Xf);
         ClassP = [];
         ClassPM = [];
@@ -284,23 +288,23 @@ find(MargGam>feature_thresh)
                     Xj1 = X1gam(:, j);
                     Xj1f = Xfgam(i, j);
 
-                    M = (Xj1-repmat(beta01f(j)', n1, 1));  
+                    M = (Xj1-repmat(mu01f(j)', n1, 1));  
                     
                     %b_k^prime
-                    b1_p = b1_p * (bk +  ((Xj1-repmat(beta01f(j)', n1, 1))'*(Xj1-repmat(beta01f(j)', n1, 1))/2));                                
+                    b1_p = b1_p * (bk +  ((Xj1-repmat(mu01f(j)', n1, 1))'*(Xj1-repmat(mu01f(j)', n1, 1))/2));                                
                     %b_k^new
-                    b1f = b1f * (bk + ((Xj1f-beta01f(j)')'*(Xj1f-beta01f(j)')+M'*M)/2);
+                    b1f = b1f * (bk + ((Xj1f-mu01f(j)')'*(Xj1f-mu01f(j)')+M'*M)/2);
 
 
                     Xj2 = X2gam(:, j);
                     Xj2f = Xfgam(i, j);
 
-                    M = (Xj2-repmat(beta02f(j)', n2, 1)); 
+                    M = (Xj2-repmat(mu02f(j)', n2, 1)); 
                     
                     %b_k^prime
-                    b2_p = b2_p * (bk + ((Xj2-repmat(beta02f(j)', n2, 1))'*(Xj2-repmat(beta02f(j)', n2, 1))/2));
+                    b2_p = b2_p * (bk + ((Xj2-repmat(mu02f(j)', n2, 1))'*(Xj2-repmat(mu02f(j)', n2, 1))/2));
                     %b_k^new
-                    b2f = b2f * (bk + ((Xj2f-beta02f(j)')'*(Xj2f-beta02f(j)')+M'*M)/2);   
+                    b2f = b2f * (bk + ((Xj2f-mu02f(j)')'*(Xj2f-mu02f(j)')+M'*M)/2);   
                     
 
                 end
@@ -351,7 +355,7 @@ lasso_coef = [B0; B(:,idxLambdaMinDeviance)] ;
 % yhat2 = exp(Xf*B(:,idxLambdaMinDeviance) + B0);
 yhat = glmval(lasso_coef,Xf,'logit');
 predYf = yhat > 0.5;
-misclas_lasso = length(Yf) - sum(predYf == Yf);
+misclas_lasso = (length(Yf) - sum(predYf == Yf))/length(Yf);
 
 tpr_class_lasso = sum(predYf == 1 & Yf == 1) / sum(Yf' == 1) ;
 fpr_class_lasso = sum(predYf == 1 & Yf == 0) / sum(Yf' == 0) ;
@@ -361,17 +365,17 @@ fpr_class_lasso = sum(predYf == 1 & Yf == 0) / sum(Yf' == 0) ;
 
 % do the SVM
 % 
-train_data = [X Y];
+train_data = [[X; Xf] [Y; Yf]];
 test_data = [Xf Yf];
 
 svm_model = fitcsvm(X,Y);
 CVSVMModel = crossval(svm_model);
 classLoss = kfoldLoss(CVSVMModel);
 misclas_svm = classLoss;
+% 
 
-
-% svm_predict = predict(CVSVMModel, Xf); 
-% misclas_svm = length(Yf) - sum(svm_predict == Yf);
+ % svm_predict = kfoldPredict(CVSVMModel, Xf); 
+ % misclas_svm = length(Yf) - sum(svm_predict == Yf);
 
 %% Gelman Rubin?
 
