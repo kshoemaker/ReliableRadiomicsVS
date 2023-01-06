@@ -1,35 +1,29 @@
-%  %%%%% First step of the model code %%%%%
- clear
- addpath('../CaseStudyData')
- importCaseStudy('HNModelData_ALL_Oct20HPV.mat')
-% 
-  
-   N = zeros(1,162) +median(N); 
-    N = N/3;
-  % data = [X; Xf]; 
-% 
-% % centering the case study data, together! 
-%  data = normalize(data);
-% % note, 9/29/2020: the  data is centered and scaled in R
-% 
-%   rng(2389);
-%   order = randperm(101); 
-%   X = data(order(1:101), :);
-%   Xf = data(order(76:101), :);
-% 
-% dataY = [Y; Yf];
-% Y = dataY(order(1:75));
-% Yf = dataY(order(76:101));
+function [numVar, numError, MargGam, mu01f, mu02f, tpr_class, fpr_class, misclas,  ...
+          lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
+ModelRun(X, Xf, Y, Yf, N, n_iter, ...
+         bi, a, b, ak, bk, ...
+         alpha_0, alpha_1, c, feature_thresh)
 
-
-%%%%% Setting up the Parameters and Hyperparameters %%%%%
+% X - train data
+% Xf - test data 
+% Y - test group membership
+% Yf - train group membership
+% N - reliablity parameter
+% n_iter - number of iterations
+% bi - size of burn in
+% a, b - hyperparameters on sigma0j
+% ak, bk - hyperparameters on sigmaj1 and sigmaj2
+% alpha_0 and alpha_1 - parameters for probit prior
+% c - hyperparameter on sigma1 and sigma2
+% feature_thresh - threshold of ppi value for inclusion as variable
+%%  Setting up the Parameters and Hyperparameters %%
 
 p = size(X, 2); % number of radiomic features
 
 %MCMC setting
 gam_prior = []; % selection latent variablel
 
-n_iter =  100000; % desired number of MCMC iterations
+% n_iter =  100000; % desired number of MCMC iterations
 r1 = 2; % number of starting variables (gamma)
 mu_j1 = zeros(p, 1); % class specific mu_jk
 mu_j2 = zeros(p, 1); % class specific mu_jk
@@ -39,25 +33,23 @@ mu_j2 = zeros(p, 1); % class specific mu_jk
 pPar = 0.5; % as recommended in the motif code
 
 % Prior and hyperpriors on gamma
- alpha_0 = -2.75;
- alpha_1 = 3;
-
-% KS: alpha_1 is set later,  where used. Should move alpha_0 there too. 
+% alpha_0 = -2.75;
+% alpha_1 = 3;
 
 % These aren't used since we fixed alpha_1
 % w = 0.05;   % mean of alpha_1 normal distrub % changed from 2 to 0,  6.14.18
 % t = .05;    % removed them 
 
 % Prior on sigma0j
-a = 3;  
-b = 0.1;
+% a = 3;  
+% b = 0.1;
 
 % Prior on sigmaj1 and sigmaj2
-ak = 3; 
-bk = 0.1;
+% ak = 3; 
+% bk = 0.1;
 
 % Prior on Sigma1 and Sigma2
-c = 0.6;   % doesn't get passed to the function,  used for computing bj 
+% c = 0.6;   % doesn't get passed to the function,  used for computing bj 
 Q = c*eye(p); %% standard setting for the IW, times c
 d_k = 3;      %% standard setting for the IW
 
@@ -79,10 +71,10 @@ mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, ..
     a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 % set the burn-in 
-bi = 20000;
+% bi = 20000;
 
 % save the non-burnin sections
-GammaBI1 = GammaA((bi+1):end);
+GammaBI1 = GammaA((bi+2):end);
 log_prob1 = log_prob((bi+1):end);
 mu_1_mat1 = mu_1_mat(:, (bi+1):end);
 mu_2_mat1 = mu_2_mat(:, (bi+1):end);
@@ -101,7 +93,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
-GammaBI2 = GammaA((bi+1):end);
+GammaBI2 = GammaA((bi+2):end);
 log_prob2 = log_prob((bi+1):end);
 mu_1_mat2 = mu_1_mat(:, (bi+1):end);
 mu_2_mat2 = mu_2_mat(:, (bi+1):end);
@@ -116,7 +108,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 mainprogRR(X, Y, gam_prior, n_iter, r1, mu_j1, mu_j2, pPar, alpha_0, alpha_1, a, b, ak, bk, Q, d_k, aj, bj, N, h1);
 
 
-GammaBI3 = GammaA((bi+1):end);
+GammaBI3 = GammaA((bi+2):end);
 log_prob3 = log_prob((bi+1):end);
 mu_1_mat3 = mu_1_mat(:, (bi+1):end);
 mu_2_mat3 = mu_2_mat(:, (bi+1):end);
@@ -128,7 +120,7 @@ clear GammaA  log_prob mu_1_mat mu_2_mat;
 %% Pool together 3 MCMC Chains
 
 GammaA = [GammaBI1 ; GammaBI2; GammaBI3];
-log_prob = [log_prob1,  log_prob2,  log_prob3];
+%log_prob = [log_prob1,  log_prob2,  log_prob3];
 mu_1_mat = [mu_1_mat1 mu_1_mat2 mu_1_mat3];
 mu_2_mat = [mu_2_mat1 mu_2_mat2 mu_2_mat3];
 
@@ -158,48 +150,46 @@ for j=1:div
     fre = [fre(:,2);Z0]; freTot = fre+freTot;
     aaa = bbb+1;
 end
+
 disp(' ')
 disp('------- Selected ROIs ...')
 disp(' ')
 MargGam = freTot./aa(1); 	
-feature_thresh = 0.5;
 find(MargGam>feature_thresh)
 
 
-    ROI_sel = find(MargGam>feature_thresh); %SNP1_sel = find(MargDel1>0.5); SNP2_sel = find(MargDel2>0.5);
-    % biB = 100000;
-    Beta01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
-    Beta02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
+    ROI_sel = find(MargGam>feature_thresh);
+    mu01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
+    mu02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
 
     test = isempty(ROI_sel);
     if test == 0
-        Beta01_gam = []; Beta02_gam = [];
-        sss = size(GammaA)-1; 
-        GammaBI=GammaA; %(bi:sss(1)); 
+        mu01_gam = []; mu02_gam = [];
+        GammaBI=GammaA; 
         aa = size(GammaBI);
         div = 1; 
         bb = round(aa(1)/div); 
         aaa = 1; 
         freTot = zeros(p, 1);
         bbb=size(GammaBI);
-        Beta01_gamBI = mu_1_mat(ROI_sel, :);
-        Beta02_gamBI = mu_2_mat(ROI_sel, :);
+        mu01_gamBI = mu_1_mat(ROI_sel, :);
+        mu02_gamBI = mu_2_mat(ROI_sel, :);
         for i=aaa:bbb
             if length(str2num(GammaBI{i}))==length(ROI_sel)
                 if str2num(GammaBI{i})==ROI_sel'
-                    Beta01_gam = [Beta01_gam; Beta01_gamBI(:, i)'];
-                    Beta02_gam = [Beta02_gam; Beta02_gamBI(:, i)'];
+                    mu01_gam = [mu01_gam; mu01_gamBI(:, i)'];
+                    mu02_gam = [mu02_gam; mu02_gamBI(:, i)'];
                 end
             end    
         end
-        disp(' ')
-        disp('------- Posterior means (group 1) ...')
-        disp(' ')
-        mean(Beta01_gam)
-        disp(' ')
-        disp('------- Posterior means (group 2) ...')
-        disp(' ')
-        mean(Beta02_gam)
+%         disp(' ')
+%         disp('------- Posterior means (group 1) ...')
+%         disp(' ')
+%         mean(Beta01_gam)
+%         disp(' ')
+%         disp('------- Posterior means (group 2) ...')
+%         disp(' ')
+%         mean(Beta02_gam)
     end
 
     selected = size(ROI_sel);
@@ -219,16 +209,14 @@ find(MargGam>feature_thresh)
 %     
      hold off;
  
-%% 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %%%%%%%%%%    Prediction 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%    Prediction 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     disp(' ')
     disp('------- Prediction  -------')
     disp(' ')
-    threshold = 0.5; %  feature_thresh;
-    numError = zeros(1, length(threshold)); 
-    numVar = zeros(1, length(threshold));
+    threshold = feature_thresh;
+    numError = 0; 
+    numVar = 0;
 
     biB = bi;
     Yf = double(Yf);
@@ -242,7 +230,7 @@ find(MargGam>feature_thresh)
     G=max(Y)+1;
 
     % a_k^prime
-    ak_p1 = ak + n1/2; %% error found 7/28, for n1 =!= n2
+    ak_p1 = ak + n1/2; 
     ak_p2 = ak + n2/2;
     
     % a_k^new
@@ -263,26 +251,26 @@ find(MargGam>feature_thresh)
         X1gam = Xgam(Y1, :);
         X2gam = Xgam(Y2, :); 
         ROI_sel = gammaList;
-        % Beta01_PostMean = mean(mu_1_mat(ROI_sel, biB:end), 2);
-        % Beta02_PostMean = mean(mu_2_mat(ROI_sel, biB:end), 2);
-        % changing so that we only use the model average from the models
-        % that select the 4
-        % changing back so we have means.
         
-        % only when the selectected are selected
-        beta01f =  mean(Beta01_gam); % Beta01_PostMean;
-        beta02f =  mean(Beta02_gam);
+        % mean of all iterations
+         mu01_PostMean = mean(mu_1_mat(ROI_sel, :), 2);
+         mu02_PostMean = mean(mu_2_mat(ROI_sel, :), 2);
         
-        % all values 
-        beta01f =  Beta01_PostMean;
-        beta02f =  Beta02_PostMean;
-        [nf,  pf] = size(Xf);
+        % mean of iterations of only when the selected variables are selected
+        % mu01f =  mean(mu01_gam); % Beta01_PostMean;
+        % mu02f =  mean(mu02_gam);
+        
+        % using the mean of all values 
+         mu01f =  mu01_PostMean;
+         mu02f =  mu02_PostMean;
+         
+        [nf,  ~] = size(Xf);
         ClassP = [];
         ClassPM = [];
         likelis = [];
         PpostM = [];
         PostProb = [];
-        [nselected , nothing] = size(gammaList);
+        [nselected , ~] = size(gammaList);
         % nselected = selected(1);
 
 
@@ -300,39 +288,35 @@ find(MargGam>feature_thresh)
                     Xj1 = X1gam(:, j);
                     Xj1f = Xfgam(i, j);
 
-                    M = (Xj1-repmat(beta01f(j)', n1, 1));  
-                    %b_k^prime
-                    b1_p = b1_p * (bk +  ((Xj1-repmat(beta01f(j)', n1, 1))'*(Xj1-repmat(beta01f(j)', n1, 1))/2));                                
+                    M = (Xj1-repmat(mu01f(j)', n1, 1));  
                     
+                    %b_k^prime
+                    b1_p = b1_p * (bk +  ((Xj1-repmat(mu01f(j)', n1, 1))'*(Xj1-repmat(mu01f(j)', n1, 1))/2));                                
                     %b_k^new
-                    b1f = b1f * (bk + ((Xj1f-beta01f(j)')'*(Xj1f-beta01f(j)')+M'*M)/2);
+                    b1f = b1f * (bk + ((Xj1f-mu01f(j)')'*(Xj1f-mu01f(j)')+M'*M)/2);
 
 
                     Xj2 = X2gam(:, j);
                     Xj2f = Xfgam(i, j);
 
-                    M = (Xj2-repmat(beta02f(j)', n2, 1)); 
-                    %b_k^prime
-                    b2_p = b2_p * (bk + ((Xj2-repmat(beta02f(j)', n2, 1))'*(Xj2-repmat(beta02f(j)', n2, 1))/2));
+                    M = (Xj2-repmat(mu02f(j)', n2, 1)); 
                     
+                    %b_k^prime
+                    b2_p = b2_p * (bk + ((Xj2-repmat(mu02f(j)', n2, 1))'*(Xj2-repmat(mu02f(j)', n2, 1))/2));
                     %b_k^new
-                    b2f = b2f * (bk + ((Xj2f-beta02f(j)')'*(Xj2f-beta02f(j)')+M'*M)/2);   
+                    b2f = b2f * (bk + ((Xj2f-mu02f(j)')'*(Xj2f-mu02f(j)')+M'*M)/2);   
                     
 
                 end
             end 
-            % b1_p = bk + b1_p/2;
-            % b2_p = bk + b2_p/2;
-            % b1f = bk + b1f/2;
-            % b2f = bk + b2f/2;
-            AA =  exp(ak_p1 * log(b1_p) - akf1 * log(b1f)) ;% (b1_p^ak_p1)/(b1f^akf1);  
-            BB =  exp(ak_p2 * log(b2_p) - akf2 * log(b2f)) ;    % (b2_p^ak_p2)/(b2f^akf2);
 
-            likf1 = (-(1/2)*log((2*pi)) + log(n1/n) + log(AA) + gammaln(akf1) - gammaln(ak_p1))
-            likf2 = (-(1/2)*log((2*pi)) + log(n2/n) + log(BB) + gammaln(akf2) - gammaln(ak_p2))
-            %likf1 = 1/(2*pi)^(n1/2)*(n1/n)*AA*gamma(akf1)/gamma(ak_p1); 
-            %likf2 = 1/(2*pi)^(n2/2)*(n2/n)*BB*gamma(akf2)/gamma(ak_p2);
+            AA =  exp(ak_p1 * log(b1_p) - akf1 * log(b1f)) ;  
+            BB =  exp(ak_p2 * log(b2_p) - akf2 * log(b2f)) ;   
 
+            likf1 = (-(1/2)*log((2*pi)) + log(n1/n) + log(AA) + gammaln(akf1) - gammaln(ak_p1));
+            likf2 = (-(1/2)*log((2*pi)) + log(n2/n) + log(BB) + gammaln(akf2) - gammaln(ak_p2));
+           
+            
             Ppost = [likf1 likf2];
             likelis = [likelis ; Ppost] ;% storing the computed likelihoods of class 1 and 2
             ExpPpost = [exp(likf1) exp(likf2)];
@@ -341,67 +325,73 @@ find(MargGam>feature_thresh)
             ClassP = [ClassP find(Ppost==max(Ppost))]; % assigns class based on max likelihood
                                                        % is "correct" -
                                                        % matches Yf
-            ClassPM = [ClassPM find(PpostM==max(PpostM))]; % assigns class based on class probability
-                                                           % is not correct
-                                                           % - opposite of
-                                                           % Yf
-    end           
-            err = sum((ClassP-1-(Yf)')~=0);
-            numErrorV = [numErrorV err ];
-            numVarV = [ numVarV sum(gammaf)];
+
+     end    
+    
+    err = sum((ClassP-1-(Yf)')~=0);
+    numError = err ;
+    numVar = sum(gammaf);
 
 
-        numError(1, :) = numErrorV;
-        numVar(1, :) = numVarV ;
+%% Metrics 
 
-        display(numErrorV)
-        display(numVarV)
+% Classification TPR/FPR
+misclas = numError/length(Yf);
+tpr_class = sum((ClassP-1) == 1 & Yf' == 1) / sum(Yf' == 1) ;
+fpr_class = sum((ClassP-1) == 1 & Yf' == 0) / sum(Yf' == 0) ;
+
+% Variable Selection TPR/FPR
+    % Done in Harness.m
+
+ %% LASSO
+
+ 
+[B,FitInfo] = lassoglm(X,Y,'binomial','CV',3);
+idxLambdaMinDeviance = FitInfo.IndexMinDeviance;
+B0 = FitInfo.Intercept(idxLambdaMinDeviance);
+lasso_coef = [B0; B(:,idxLambdaMinDeviance)] ;
+ 
+ 
+% yhat2 = exp(Xf*B(:,idxLambdaMinDeviance) + B0);
+yhat = glmval(lasso_coef,Xf,'logit');
+predYf = yhat > 0.5;
+misclas_lasso = (length(Yf) - sum(predYf == Yf))/length(Yf);
+
+tpr_class_lasso = sum(predYf == 1 & Yf == 1) / sum(Yf' == 1) ;
+fpr_class_lasso = sum(predYf == 1 & Yf == 0) / sum(Yf' == 0) ;
 
 
-    disp(' ')
-    disp('------- number of miss-classified subjects...')
-    disp(' ')
-    display(numError)
+%% SVM 
 
-    disp(' ')
-    disp('------- Miss-classification rate...')
-    disp(' ')
-    display(numError/length(Yf))
-
-% [likelis PostProb (ClassP-1)'  Yf]
-tpr = sum((ClassP-1) == 1 & Yf' == 1) / sum(Yf' == 1) ;
-fpr = sum((ClassP-1) == 1 & Yf' == 0) / sum(Yf' == 0) ;
-
-% %% trace plotting 
+% do the SVM
 % 
-% % % code for plotting trace of variables selected
-% % countofvars  = cellfun(@(x) length(str2num(x)), GammaBI);
-% % plot(1:73334 , countofvars(1:73334), 1:73334, countofvars(73335:146668), 1:73334, countofvars(146669:220002))
-% % 
-% % % code for plotting trace of first mean parameter
-% % plot(1:93333, Beta01_gamBI(1, 1:93333), 1:93333, Beta01_gamBI(1, 93334:186666), 1:93333, Beta01_gamBI(1, 186667:279999))
-% % plot(1:93333, Beta02_gamBI(1, 1:93333), 1:93333, Beta02_gamBI(1, 93334:186666), 1:93333, Beta02_gamBI(1, 186667:279999))
+train_data = [X Y];
+test_data = [Xf Yf];
+
+svm_model = fitcsvm(X,Y);
+CVSVMModel = crossval(svm_model);
+classLoss = kfoldLoss(CVSVMModel);
+misclas_svm = classLoss;
+
+
+% svm_predict = predict(CVSVMModel, Xf); 
+% misclas_svm = length(Yf) - sum(svm_predict == Yf);
+
+%% Gelman Rubin?
+
+% gelman rubin?
+% need to get computational statistics toolbox files off old laptop
+
+% addpath('/Users/katherineshoemaker/Documents/CompStatsToolboxV2/')
+% open '/Users/katherineshoemaker/Documents/CompStatsToolboxV2/Contents'
 % 
-% %% LASSO
+% nu1 = [mean(mu_1_mat1'); mean(mu_1_mat2'); mean(mu_1_mat3')];
+% nu2 = [mean(mu_2_mat1'); mean(mu_2_mat2'); mean(mu_2_mat3')];
 % 
-[B fitInfo] = lasso(X,Y,'CV',10);
-  lambda1SE = fitInfo.Lambda1SE;
- idxLambda1SE = fitInfo.Index1SE;
-%  
- [B,FitInfo] = lassoglm(X,Y,'binomial','CV',3);
- idxLambdaMinDeviance = FitInfo.IndexMinDeviance;
- B0 = FitInfo.Intercept(idxLambdaMinDeviance);
- coef = [B0; B(:,idxLambdaMinDeviance)] ;
-%  
-% 
-% coef = B(:,idxLambda1SE);
-%lasso_coef = coef; 
- %coef0 = fitInfo.Intercept(idxLambda1SE);
-%  
-      yhat2 = exp(Xf*B(:,idxLambdaMinDeviance) + B0);
-      yhat = glmval(coef,Xf,'logit');
-      predYf = yhat > 0.5;
-      misclas_lasso = length(Yf) - sum(predYf == Yf)
+% GR1 = cs(nu1(:,1:4))
+% GR2 = csgelrub(nu2)
+
+%% 
 % %% ROI Curve
 % % code for ROI curve
 % % 

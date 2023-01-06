@@ -9,6 +9,13 @@ for  s=1:trials
     
     rng(seeds(s)*100) 
     
+     % simdata(n, balance, p1, p2, mu1)
+
+% n is sample size
+% balance is proportion of sample in group 1
+% p1 is the number of discriminating features
+% p2 is the number of noise features
+% mu1 is the vector of true group mean values, 1 value per group
     simdata(100, 0.5, 
     run('InputSimGBM.m')
     %run('InputCaseStudy.m')
