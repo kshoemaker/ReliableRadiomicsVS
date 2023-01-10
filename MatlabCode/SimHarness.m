@@ -1,6 +1,6 @@
 function [ ] = ...
  SimHarness(iteration, n, balance, p1, p2, mu1, informed)
-
+iteration = 80
 seeds = (1:100)+102389;
 
 this_seed = seeds(iteration);
@@ -23,6 +23,7 @@ rng(this_seed)
 % informed = 1;
 
 [X, Xf, Y, Yf, N] = simdata(n, balance, p1, p2, mu1, informed);
+[X, Xf, Y, Yf, N] = simdata(100, 0.5, 4, 100, [1,-1], 0);
 
 % run model
 % ModelRun(X, Xf, Y, Yf, N, n_iter, ...
@@ -64,6 +65,12 @@ elseif informed == 0
     type = "noninformative";
 end 
 file_name = join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, ".mat"], "");
+csv1_name =  join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, "chain1.txt"], "");
+csv2_name =  join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, "chain2.txt"], "");
+
+csvwrite(csv1_name, mu_1_mat);
+csvwrite(csv2_name, mu_2_mat);
+
 save(file_name, 'numVar', 'numError', 'MargGam', 'mu01f', 'mu02f', 'mu_1_mat', 'mu_2_mat',  'tpr_class', 'fpr_class', ... 
         'misclas', 'lasso_coef', 'misclas_lasso', 'misclas_svm', 'tpr_class_lasso', ...
     'fpr_class_lasso') 

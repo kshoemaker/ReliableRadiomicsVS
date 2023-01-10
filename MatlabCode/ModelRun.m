@@ -177,6 +177,7 @@ find(MargGam>feature_thresh)
         for i=aaa:bbb
             if length(str2num(GammaBI{i}))==length(ROI_sel)
                 if str2num(GammaBI{i})==ROI_sel'
+                    disp('Yep!')
                     mu01_gam = [mu01_gam; mu01_gamBI(:, i)'];
                     mu02_gam = [mu02_gam; mu02_gamBI(:, i)'];
                 end
@@ -194,20 +195,20 @@ find(MargGam>feature_thresh)
 
     selected = size(ROI_sel);
 
-[obvs, vars]  = size(X);
-     plotx = 1:1:vars;
-     ploty = MargGam;
-%     
-%     
-     plotX = [plotx; plotx];
-     plotY = [repelem(0, vars); ploty.'];
-     figure; hold on;
-     plot(plotx, ploty, '*'),   xlim([1 vars]), ylim([0 1.05])
-     %title(mytitle);
-     line(plotX, plotY,  'color', 'r'); 
-       % line(plotX(:, real), plotY(:, real),  'color', 'b');
-%     
-     hold off;
+% [obvs, vars]  = size(X);
+%      plotx = 1:1:vars;
+%      ploty = MargGam;
+% %     
+% %     
+%      plotX = [plotx; plotx];
+%      plotY = [repelem(0, vars); ploty.'];
+%      figure; hold on;
+%      plot(plotx, ploty, '*'),   xlim([1 vars]), ylim([0 1.05])
+%      %title(mytitle);
+%      line(plotX, plotY,  'color', 'r'); 
+%        % line(plotX(:, real), plotY(:, real),  'color', 'b');
+% %     
+%      hold off;
  
 %%    Prediction 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,9 +261,14 @@ find(MargGam>feature_thresh)
          mu01f =  mean(mu01_gam); % Beta01_PostMean;
          mu02f =  mean(mu02_gam);
         
-        % using the mean of all values 
-        % mu01f =  mu01_PostMean;
-        % mu02f =  mu02_PostMean;
+        % in cases where the selected group was never chosen, 
+        % using the mean of each variable over all iterations
+            % possible improvement, take over iterations where it was
+            % selected?
+        if isnan(mu01f) 
+         mu01f =  mu01_PostMean;
+         mu02f =  mu02_PostMean;
+        end 
          
         [nf,  ~] = size(Xf);
         ClassP = [];

@@ -1,127 +1,81 @@
 function [ ] = ...
  SimHarness(iteration, n, balance, p1, p2, mu1, informed)
+iteration = 80
+seeds = (1:100)+102389;
 
-seeds = (1:100)+10289;
+this_seed = seeds(iteration);
+rng(this_seed) 
 
-    this_seed = seeds(iteration);
-    rng(this_seed) 
-    
-    % simulate data using function
-    % simdata(n, balance, p1, p2, mu1)
-    
-    % n is sample size
-    % n = 100;
-    % balance is proportion of sample in group 1
-    % balance = 0.5;
-    % p1 is the number of discriminating features
-    % p1 = 4;
-    % p2 is the number of noise features
-    % p2 = 100;
-    % mu1 is the vector of true group mean values, 1 value per group
-    % mu1 = [0.8, -0.8];
-    % informed - informed N or not?, 1 for informed, 0 for neutral
-    % informed = 1;
-    
-    [X, Xf, Y, Yf, N] = simdata(n, balance, p1, p2, mu1, informed);
+% simulate data using function
+% simdata(n, balance, p1, p2, mu1)
 
-    % run model
-    % ModelRun(X, Xf, Y, Yf, N, n_iter, ...
-    %      bi, a, b, ak, bk, ...
-    %      alpha_0, alpha_1, c, feature_thresh)
+% n is sample size
+% n = 100;
+% balance is proportion of sample in group 1
+% balance = 0.5;
+% p1 is the number of discriminating features
+% p1 = 4;
+% p2 is the number of noise features
+% p2 = 100;
+% mu1 is the vector of true group mean values, 1 value per group
+% mu1 = [0.8, -0.8];
+% informed - informed N or not?, 1 for informed, 0 for neutral
+% informed = 1;
 
-    % X - train data
-    % Xf - test data 
-    % Y - test group membership
-    % Yf - train group membership
-    % N - reliablity parameter
-    % n_iter - number of iterations
-    n_iter = 100000;
-    % bi - size of burn in
-    bi = 20000;
-    % a, b - hyperparameters on sigma0j
-    a = 3;
-    b = 0.1;
-    % ak, bk - hyperparameters on sigmaj1 and sigmaj2
-    ak = 3;
-    bk = 0.1;
-    % alpha_0 and alpha_1 - parameters for probit prior
-    alpha_0 = -2.75;
-    alpha_1 = 3;
-    % c - hyperparameter on sigma1 and sigma2
-    c = 0.5;
-    % feature_thresh - threshold of ppi value for inclusion as variable
-    feature_thresh = 0.5;
+[X, Xf, Y, Yf, N] = simdata(n, balance, p1, p2, mu1, informed);
+[X, Xf, Y, Yf, N] = simdata(100, 0.5, 4, 100, [1,-1], 0);
 
-   [numVar, numError, MargGam,  mu01f, mu02f, tpr_class, fpr_class, misclas,  ...
-          lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
-    ModelRun(X, Xf, Y, Yf, N, n_iter, ...
-         bi, a, b, ak, bk, ...
-         alpha_0, alpha_1, c, feature_thresh)
-     
-    file_name = join(["./SimulationOutputFiles/inform_seed", num2str(this_seed), ".mat"], "");
-    save(file_name, 'numVar', 'numError', 'MargGam', 'mu01f'tpr_class', 'fpr_class', ... 
-            'misclas', 'lasso_coef', 'misclas_lasso', 'misclas_svm', 'tpr_class_lasso', ...
-        'fpr_class_lasso') 
+% run model
+% ModelRun(X, Xf, Y, Yf, N, n_iter, ...
+%      bi, a, b, ak, bk, ...
+%      alpha_0, alpha_1, c, feature_thresh)
+
+% X - train data
+% Xf - test data 
+% Y - test group membership
+% Yf - train group membership
+% N - reliablity parameter
+% n_iter - number of iterations
+n_iter = 100000;
+% bi - size of burn in
+bi = 20000;
+% a, b - hyperparameters on sigma0j
+a = 3;
+b = 0.1;
+% ak, bk - hyperparameters on sigmaj1 and sigmaj2
+ak = 3;
+bk = 0.1;
+% alpha_0 and alpha_1 - parameters for probit prior
+alpha_0 = -2.75;
+alpha_1 = 3;
+% c - hyperparameter on sigma1 and sigma2
+c = 0.5;
+% feature_thresh - threshold of ppi value for inclusion as variable
+feature_thresh = 0.5;
+
+[numVar, numError, MargGam,  mu01f, mu02f,  mu_1_mat, mu_2_mat, tpr_class, fpr_class, misclas,  ...
+      lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
+ModelRun(X, Xf, Y, Yf, N, n_iter, ...
+     bi, a, b, ak, bk, ...
+     alpha_0, alpha_1, c, feature_thresh)
+
+if informed == 1
+   type = "informative";
+elseif informed == 0
+    type = "noninformative";
+end 
+file_name = join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, ".mat"], "");
+csv1_name =  join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, "chain1.txt"], "");
+csv2_name =  join(["./SimulationOutputFiles/FirstPass_iter", num2str(iteration), type, "chain2.txt"], "");
+
+csvwrite(csv1_name, mu_1_mat);
+csvwrite(csv2_name, mu_2_mat);
+
+save(file_name, 'numVar', 'numError', 'MargGam', 'mu01f', 'mu02f', 'mu_1_mat', 'mu_2_mat',  'tpr_class', 'fpr_class', ... 
+        'misclas', 'lasso_coef', 'misclas_lasso', 'misclas_svm', 'tpr_class_lasso', ...
+    'fpr_class_lasso') 
   
- clearvars -except trials seeds this_seed
-    rng(this_seed)  
- 
-     % simulate data using function
-    % simdata(n, balance, p1, p2, mu1)
-    
-    % n is sample size
-    n = 100;
-    % balance is proportion of sample in group 1
-    balance = 0.5;
-    % p1 is the number of discriminating features
-    p1 = 4;
-    % p2 is the number of noise features
-    p2 = 100;
-    % mu1 is the vector of true group mean values, 1 value per group
-    mu1 = [0.8, -0.8];
-    % informed - informed N or not?, 1 for informed, 0 for neutral
-    informed = 0;
-    
-    [X, Xf, Y, Yf, N] = simdata(n, balance, p1, p2, mu1, informed);
 
-    % run model
-    % ModelRun(X, Xf, Y, Yf, N, n_iter, ...
-    %      bi, a, b, ak, bk, ...
-    %      alpha_0, alpha_1, c, feature_thresh)
-
-    % X - train data
-    % Xf - test data 
-    % Y - test group membership
-    % Yf - train group membership
-    % N - reliablity parameter
-    % n_iter - number of iterations
-    n_iter = 100000;
-    % bi - size of burn in
-    bi = 20000;
-    % a, b - hyperparameters on sigma0j
-    a = 3;
-    b = 0.1;
-    % ak, bk - hyperparameters on sigmaj1 and sigmaj2
-    ak = 3;
-    bk = 0.1;
-    % alpha_0 and alpha_1 - parameters for probit prior
-    alpha_0 = -2.75;
-    alpha_1 = 3;
-    % c - hyperparameter on sigma1 and sigma2
-    c = 0.5;
-    % feature_thresh - threshold of ppi value for inclusion as variable
-    feature_thresh = 0.5;
-
-   [numVar, numError, MargGam, beta01f, beta02f, tpr_class, fpr_class, misclas,  ...
-          lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
-    ModelRun(X, Xf, Y, Yf, N, n_iter, ...
-         bi, a, b, ak, bk, ...
-         alpha_0, alpha_1, c, feature_thresh)
-     
-    file_name = join(["./SimulationOutputFiles/neutral_seed", num2str(this_seed), ".mat"], "");
-    save(file_name, 'numVar', 'numError', 'MargGam', 'beta01f', 'beta02f', 'tpr_class', 'fpr_class', ... 
-            'misclas', 'lasso_coef', 'misclas_lasso', 'misclas_svm', 'tpr_class_lasso', ...
-        'fpr_class_lasso') 
     
 
 

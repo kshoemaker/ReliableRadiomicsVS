@@ -1,4 +1,4 @@
-function [numVar, numError, MargGam, mu01f, mu02f, tpr_class, fpr_class, misclas,  ...
+function [numVar, numError, MargGam, mu01f, mu02f, mu_1_mat, mu_2_mat, tpr_class, fpr_class, misclas,  ...
           lasso_coef, misclas_lasso, misclas_svm, tpr_class_lasso, fpr_class_lasso] = ...
 ModelRun(X, Xf, Y, Yf, N, n_iter, ...
          bi, a, b, ak, bk, ...
@@ -177,6 +177,7 @@ find(MargGam>feature_thresh)
         for i=aaa:bbb
             if length(str2num(GammaBI{i}))==length(ROI_sel)
                 if str2num(GammaBI{i})==ROI_sel'
+                    disp('Yep!')
                     mu01_gam = [mu01_gam; mu01_gamBI(:, i)'];
                     mu02_gam = [mu02_gam; mu02_gamBI(:, i)'];
                 end
@@ -194,20 +195,20 @@ find(MargGam>feature_thresh)
 
     selected = size(ROI_sel);
 
-[obvs, vars]  = size(X);
-     plotx = 1:1:vars;
-     ploty = MargGam;
-%     
-%     
-     plotX = [plotx; plotx];
-     plotY = [repelem(0, vars); ploty.'];
-     figure; hold on;
-     plot(plotx, ploty, '*'),   xlim([1 vars]), ylim([0 1.05])
-     %title(mytitle);
-     line(plotX, plotY,  'color', 'r'); 
-       % line(plotX(:, real), plotY(:, real),  'color', 'b');
-%     
-     hold off;
+% [obvs, vars]  = size(X);
+%      plotx = 1:1:vars;
+%      ploty = MargGam;
+% %     
+% %     
+%      plotX = [plotx; plotx];
+%      plotY = [repelem(0, vars); ploty.'];
+%      figure; hold on;
+%      plot(plotx, ploty, '*'),   xlim([1 vars]), ylim([0 1.05])
+%      %title(mytitle);
+%      line(plotX, plotY,  'color', 'r'); 
+%        % line(plotX(:, real), plotY(:, real),  'color', 'b');
+% %     
+%      hold off;
  
 %%    Prediction 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -260,9 +261,13 @@ find(MargGam>feature_thresh)
          mu01f =  mean(mu01_gam); % Beta01_PostMean;
          mu02f =  mean(mu02_gam);
         
-        % using the mean of all values 
-        % mu01f =  mu01_PostMean;
-        % mu02f =  mu02_PostMean;
+        % in cases where the selected group was never chosen, 
+        % using the mean of each variable over all iterations
+            
+        if isnan(mu01f) 
+         mu01f =  mu01_PostMean;
+         mu02f =  mu02_PostMean;
+        end 
          
         [nf,  ~] = size(Xf);
         ClassP = [];
@@ -365,10 +370,11 @@ fpr_class_lasso = sum(predYf == 1 & Yf == 0) / sum(Yf' == 0) ;
 
 % do the SVM
 % 
-train_data = [[X; Xf] [Y; Yf]];
-test_data = [Xf Yf];
+train_X = [X; Xf]; 
+train_Y =  [Y; Yf];
+%test_data = [Xf Yf];
 
-svm_model = fitcsvm(X,Y);
+svm_model = fitcsvm(train_X,train_Y);
 CVSVMModel = crossval(svm_model);
 classLoss = kfoldLoss(CVSVMModel);
 misclas_svm = classLoss;
